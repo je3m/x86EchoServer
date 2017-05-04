@@ -67,6 +67,7 @@ main:
   call printf                         # print the file descriptor
   sub esp, 0x8                        # pop off those arguments
 
+loop:
   push 0                              # 0 flags 
   push 2048                           # msg buffer length
   mov ebx, ebp
@@ -74,9 +75,13 @@ main:
   push ebx                            # buffer address
   push DWORD PTR [ebp-8]              # client socket descriptor
   call recv
-  sub esp, 0xf  
+  sub esp, 0xf
+  mov edi, eax                        # save length of the message
+  add eax, ebp                        # calculate address to place null 
+  sub eax, 2088                       # terminator
+  mov DWORD PTR [eax], 0              # place null
 
-  push eax
+  push edi
   push OFFSET recv_format
   call printf                         # print the msg len
   sub esp, 0x8                        # pop off those arguments
@@ -87,6 +92,21 @@ main:
   push OFFSET print_msg_format
   call printf                         # print the msg len
   sub esp, 0x8                        # pop off those arguments
+
+  push 0                              # set flags
+  push edi                            # size of message
+  push ebx                            # address of message
+  mov eax, DWORD PTR [ebp-8]
+  push eax                            # connection fd
+  call send
+  sub esp, 0xf
+
+  cmp edi, 0
+  jg loop
+
+  push OFFSET closing_message
+  call printf                         # print the msg len
+  sub esp, 0x4
 
   push 4                              # close client socket
   call close
@@ -109,3 +129,4 @@ main:
   accept_format: .string "accept return value: %d\n"
   recv_format: .string "msg length: %d\n"
   print_msg_format: .string "message was: %s\n"
+  closing_message: .string "connection lost, closing...\n"
