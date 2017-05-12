@@ -1,7 +1,5 @@
 .section .text
   .global main
-  .extern printf
-  .extern socket
   .intel_syntax noprefix
 
 main:
@@ -45,6 +43,7 @@ main:
   call printf                         # print the file descriptor
   sub esp, 0x8                        # pop off those arguments
 
+listen_loop:
   push 1                              # one connection queue
   push [ebp-4]                        # push socket fd
   call listen
@@ -61,6 +60,10 @@ main:
   call accept
   sub esp, 0xc
   mov [ebp-8], eax                    # save the conn for later
+
+  call fork 
+  cmp eax, 0
+  jne listen_loop
 
   push eax
   push OFFSET accept_format
