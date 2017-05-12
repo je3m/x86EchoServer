@@ -6,6 +6,35 @@ main:
   push ebp                            # setting up the stack frame
   mov ebp, esp
   sub esp, 2092
+
+  mov eax, [ebp+8]                    # grab argc
+  cmp eax, 1                          # no arguments
+  je done_loading_so
+
+  mov eax, DWORD PTR [ebp+12]         # dereference argv
+  add eax, 4                          # go forward one byte
+  mov eax, DWORD PTR [eax]            # dereference to get argv[1]
+  mov esi, eax                        # save that value
+
+  push 2                              # load the library now
+  push esi                            # file path to .so
+  call dlopen
+  sub esp, 0x8
+  mov esi, eax                        # save the handle
+
+  push OFFSET print_name_symbol       #
+  push esi                            #
+  call dlsym                          # call the print_name method on lib
+  sub esp, 0x8                        #
+  call eax                            #
+
+  push OFFSET mutate_symbol
+  push esi
+  call dlsym
+  sub esp, 0x8
+  mov esi, eax                        # save the pointer to mutate function
+
+done_loading_so:
  
   push 0                              # use protocol 0 (whatever that means) 
   push 1                              # SOCK_STREAM (use tcp)
@@ -96,6 +125,10 @@ loop:
   call printf                         # print the msg len
   sub esp, 0x8                        # pop off those arguments
 
+  push ebx                            #
+  call esi                            # call mutate
+  pop ebx                             #
+
   push 0                              # set flags
   push edi                            # size of message
   push ebx                            # address of message
@@ -133,3 +166,6 @@ loop:
   recv_format: .string "msg length: %d\n"
   print_msg_format: .string "message was: %s\n"
   closing_message: .string "connection lost, closing...\n"
+  arg_number: .string "%d args\n"
+  print_name_symbol: .string "print_name"
+  mutate_symbol: .string "mutate"
