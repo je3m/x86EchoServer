@@ -7,6 +7,10 @@ main:
   mov ebp, esp
   sub esp, 2092
 
+  lea esi, no_mutate
+  call esi
+  pop eax
+
   mov eax, [ebp+8]                    # grab argc
   cmp eax, 1                          # no arguments
   je done_loading_so
@@ -152,6 +156,13 @@ loop:
   call close
   sub esp, 0x4
 
+  nop
+  leave
+  ret
+
+no_mutate:
+  push ebp
+  mov ebp, esp
   nop
   leave
   ret
