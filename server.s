@@ -8,8 +8,6 @@ main:
   sub esp, 2092
 
   lea esi, no_mutate
-  call esi
-  pop eax
 
   mov eax, [ebp+8]                    # grab argc
   cmp eax, 1                          # no arguments
